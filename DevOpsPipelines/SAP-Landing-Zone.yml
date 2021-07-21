@@ -111,12 +111,6 @@ parameters:
   type: boolean
   default: True
 
-#will be added soon
-#- name: qualitychecks
-#  displayName: HANA quality checks
-#  type: boolean
-#  default: False
-
 - name: xsasetup
   displayName: Install XSA components
   type: boolean
@@ -136,7 +130,7 @@ trigger:
   none
 
 pool:
-  name: $(agent)
+  name: $(AgentPool)
 
 variables:
   backuptype: ${{ parameters.hanabackupsetup }}
