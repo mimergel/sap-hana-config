@@ -1,57 +1,6 @@
 # This Pipeline deploys the SAP landing zone with Terraform
 
 parameters:
-- name: size
-  displayName: HANA VM Size
-  type: string
-  default: M32ts_192_GB
-  values:
-  - E16ds_v4_128_GB-Non-PRD
-  - E20ds_v4_160_GB-Non-PRD
-  - M32ts_192_GB
-  - M32ls_256_GB
-  - E48ds_v4_384_GB-Non-PRD
-  - M64ls_512_GB
-  - M32dms_v2_875_GB
-  - M64ds_v2_1.000_GB
-  - M64dms_v2_1.792_GB
-  - M128ds_v2_2.000_GB
-  - M208s_v2_2.850_GB
-  - M128dms_v2_3.892_GB
-  - M208ms_v2_5.700_GB
-  - M416ms_v2_11.400_GB
-
-- name: os
-  displayName: Operating System
-  type: string
-  default: "SLES 12 SP4"
-  values:
-  - "RHEL 7.7"
-  - "RHEL 8.1"
-  - "SLES 12 SP4"
-  - "SLES 12 SP5"
-  - "SLES 15 SP2"
-
-- name: sid
-  displayName: HANA System ID
-  type: string
-  default: "HDB"
-
-- name: nr
-  displayName: HANA Instance Number (00-99)
-  type: string
-  default: "20"
-
-- name: vmname
-  displayName: HANA VM Name in Azure
-  type: string
-  default: "HANATEST"
-
-- name: hostname
-  displayName: HANA Host Name in the OS
-  type: string
-  default: "hanatest"
-
 - name: location
   displayName: Target Region
   type: string
@@ -61,71 +10,6 @@ parameters:
   - "France Central"
   - "Germany West Central"
 
-- name: vnet_subnet
-  displayName: Target VNET & Subnet
-  type: string
-  default: "vnet-sap-prod-francecentral-001/subnets/snet-sap-prod-francecentral-001"
-  values:
-  - "vnet-sap-prod-westeurope-001/subnets/snet-sap-prod-westeurope-001"
-  - "vnet-sap-prod-francecentral-001/subnets/snet-sap-prod-francecentral-001"
-  - "vnet-sap-prod-germanywestcentral-001/subnets/snet-sap-prod-germanywestcentral-001"
-  # Adapt according to your target landing zone
-  # "<VNET>/subnets/<subnet>"
-
-- name: availzone
-  displayName: Availability Zone
-  type: number
-  default: 0
-  values:
-  - 0
-  - 1
-  - 2
-  - 3
-
-- name: hanavmdeployment
-  displayName: HANA VM Deployment
-  type: boolean
-  default: true
-
-- name: osprep
-  displayName: OS Preparations
-  type: boolean
-  default: true
-
-- name: hanadbinstallation
-  displayName: HANA DB Installation
-  type: boolean
-  default: true
-
-- name: hanabackupsetup
-  displayName: HANA Backup Setup
-  type: string
-  default: "Non-PROD"
-  values:
-  - "Non-PROD"
-  - "PROD"
-  - "None"
-
-- name: monitoringextsap
-  displayName: Azure Monitoring Extension for SAP
-  type: boolean
-  default: True
-
-- name: xsasetup
-  displayName: Install XSA components
-  type: boolean
-  default: False
-
-- name: hcmt
-  displayName: HANA performance checks
-  type: boolean
-  default: False
-
-- name: cleanup
-  displayName: Remove everything at the end
-  type: boolean
-  default: False
-
 trigger:
   none
 
@@ -133,19 +17,8 @@ pool:
   name: $(AgentPool)
 
 variables:
-  backuptype: ${{ parameters.hanabackupsetup }}
-  backuptodo: $[ ne(variables['backuptype'], 'None') ]
-  hanadbinst: ${{ parameters.hanadbinstallation }}
-  hanavmrg: RG-HANA-${{ parameters.sid }}
-  hanavmfqdn: ${{ parameters.hostname }}.$(privatednszone)
-  containersuffix: "$(hanavmrg);${{ parameters.vmname }}"
-  hanabackupcontainer: "VMAppContainer;Compute;$(containersuffix)"
-  hanavmid: /subscriptions/$(subscription)/resourceGroups/$(hanavmrg)/providers/Microsoft.Compute/virtualMachines/${{ parameters.vmname }}
-  subnetid: /subscriptions/$(subscription)/resourceGroups/$(vnet-rg)/providers/Microsoft.Network/virtualNetworks/${{ parameters.vnet_subnet }}
-  osvar: ${{ parameters.os }}
-  usepyth3: $[ or(eq(variables['osvar'], 'SLES 15 SP2'),eq(variables['osvar'], 'RHEL 8')) ]
 
-name: ${{ parameters.vmname }}_${{ parameters.sid }}_${{ parameters.nr }}_${{ parameters.os }}_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+name: SAP-Landingzone-Deployment_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
 
 stages:
 - stage: Publish_Pipeline_Artifact
@@ -158,18 +31,22 @@ stages:
         targetPath: '$(System.DefaultWorkingDirectory)'
         artifact: hana
 
-- stage: Terraform
+- stage: Prepare Deployer
   jobs:
-  - job: Download Terraform
+  - job: Prepare
     steps:
-    displayName: Download Terraform
+    displayName: Run Prepare Script
     - script: |
         #!/bin/bash
         mkdir -p ~/bin
         wget https://releases.hashicorp.com/terraform/0.15.5/terraform_0.15.5_linux_amd64.zip
 	      unzip terraform_0.15.5_linux_amd64.zip
         mv terraform ~/bin
-      
+        export PATH=$PATH:~/bin
+        mkdir ~/Azure_SAP_Automated_Deployment; cd $_
+      	git clone --single-branch --branch beta https://github.com/Azure/sap-hana.git
+	      git clone https://github.com/mimergel/sap-hana.config.git
+
 
     - task: AzureResourceManagerTemplateDeployment@3
       displayName: 'SAP HANA VM Deployment via ARM'
