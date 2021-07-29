@@ -16,154 +16,25 @@ trigger:
 pool:
   name: $(AgentPool)
 
-variables:
-
 name: SAP-Landingzone-Deployment_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
 
-stages:
-- stage: Publish_Pipeline_Artifact
-  jobs:
-  - job: Publish_Pipeline_Artifact
-    steps:
-    - task: PublishPipelineArtifact@1
-      displayName: 'Publish Pipeline Artifact'
-      inputs:
-        targetPath: '$(System.DefaultWorkingDirectory)'
-        artifact: hana
-
-- stage: Prepare Deployer
-  jobs:
-  - job: Prepare
-    steps:
+steps:
+- script: |
+    #!/bin/bash
+    mkdir -p ~/bin
+    wget https://releases.hashicorp.com/terraform/0.15.5/terraform_0.15.5_linux_amd64.zip
+    unzip terraform_0.15.5_linux_amd64.zip
+    mv terraform ~/bin
+    export PATH=$PATH:~/bin
+    mkdir ~/Azure_SAP_Automated_Deployment; cd $_
+    git clone --single-branch --branch beta https://github.com/Azure/sap-hana.git
+    git clone https://github.com/mimergel/sap-hana.config.git
     displayName: Run Prepare Script
-    - script: |
-        #!/bin/bash
-        mkdir -p ~/bin
-        wget https://releases.hashicorp.com/terraform/0.15.5/terraform_0.15.5_linux_amd64.zip
-	      unzip terraform_0.15.5_linux_amd64.zip
-        mv terraform ~/bin
-        export PATH=$PATH:~/bin
-        mkdir ~/Azure_SAP_Automated_Deployment; cd $_
-      	git clone --single-branch --branch beta https://github.com/Azure/sap-hana.git
-	      git clone https://github.com/mimergel/sap-hana.config.git
+  failOnStderr: false
 
-
-    - task: AzureResourceManagerTemplateDeployment@3
-      displayName: 'SAP HANA VM Deployment via ARM'
-      inputs:
-        deploymentScope: 'Resource Group'
-        azureResourceManagerConnection: '$(azureconnectionname)'
-        subscriptionId: '$(subscription)'
-        action: 'Create Or Update Resource Group'
-        resourceGroupName: '$(hanavmrg)'
-        location: ${{ parameters.location }}
-        templateLocation: 'URL of the file'
-        csmFileLink: 'https://raw.githubusercontent.com/$(gituser)/sap-hana-vm/$(Build.SourceBranchName)/ARM-Template/hana-vm.json'
-        overrideParameters: '-adminUsername "$(adminuser)" -vmNameInput "${{ parameters.vmname }}" -HostNameInput "${{ parameters.hostname }}" -hanaSystemId "${{ parameters.sid }}" -hanaSystemSize "${{ parameters.size }}" -osType "${{ parameters.os }}" -adminPasswordOrKey "$(pubsshkey)" -subnetId "$(subnetid)" -availabilityZone "${{ parameters.availzone }}" -BackupTag "${{ parameters.hanabackupsetup }}" -Script_URL "$(url-disk-cfg)" -diagnosticsStorageAccountName "$(diagnosticsstorageaccountname)" '
-        deploymentMode: 'Complete'
-        deploymentName: 'hana-vm-${{ parameters.sid }}-$(Build.BuildId)'
-        deploymentOutputs: 'arm_output'
-
-    - task: PowerShell@2
-      displayName: 'Get ARM Output variables'
-      # https://www.timmerman.it/index.php/using-values-from-your-arm-template-across-your-azure-devops-pipeline-with-powershell/
-      inputs:
-        targetType: 'filePath'
-        filePath: '$(System.DefaultWorkingDirectory)/Scripts/Parse_ARM_Deployment_Output.ps1'
-        arguments: -ArmOutputString '$(arm_output)' -MakeOutput -ErrorAction Stop
-        errorActionPreference: stop
-        showWarnings: true
-
-    - script: |
-        #!/bin/bash
-        mkdir -p ~/Inventory
-        echo $(arm_output) > ~/Inventory/${{ parameters.vmname }}.json
-      displayName: Write Inventory JSON
-      failOnStderr: false
-
-    - script: |
-        #!/bin/bash
-        mkdir -p ~/Inventory
-        echo $(arm_output.hanavmname.value)  > ~/Inventory/${{ parameters.vmname }}.hanavmname
-        echo $(arm_output.hanadbid.value)     > ~/Inventory/${{ parameters.vmname }}.hanadbid
-        echo $(arm_output.privateip.value)  > ~/Inventory/${{ parameters.vmname }}.privateip
-      displayName: Write Inventory files
-      failOnStderr: false
-
-- stage: Prepare_OS
-  condition: eq(${{ parameters.osprep }}, true )
-  jobs:
-  - job: Prepare_OS
-    steps:
-    - checkout: none
-    - script: |
-        #!/bin/bash
-        privateip=`cat ~/Inventory/${{ parameters.vmname }}.privateip`
-        echo "##vso[task.setvariable variable=privateip]$privateip"
-        entry=`ssh-keygen -F $privateip`
-        if [[ -n $entry ]]
-        then
-          echo "Known host entry will be removed"
-          ssh-keygen -f "~/.ssh/known_hosts" -R $privateip
-        else
-          echo "No entry found, nothing to remove"
-        fi
-        exit 0
-      displayName: Remove known_hosts entries from former runs that used the same name
-      failOnStderr: false
-
-    - script: until ping -c1 $(privateip) >/dev/null 2>&1; do :; done
-      displayName: Wait until IP is accessible $(privateip)
-      failOnStderr: false
-
-    - task: Ansible@0
-      displayName: 'OS Preparations RHEL8 / SLES 15(Ansible)'
-      inputs:
-        ansibleInterface: 'agentMachine'
-        playbookPathOnAgentMachine: 'Ansible/os-settings_playbook.yml'
-        inventoriesAgentMachine: inlineContent
-        inventoryInlineContentAgentMachine: |
-          [hana]
-          $(privateip)
-        args: -vv -e 'ansible_python_interpreter=/usr/bin/python3'
-        failOnStdErr: false
-      condition: and(eq(${{ parameters.osprep }}, true), eq(variables.usepyth3, true))
-
-    - task: Ansible@0
-      displayName: 'OS Preparations RHEL7 / SLES 12 (Ansible)'
-      inputs:
-        ansibleInterface: 'agentMachine'
-        playbookPathOnAgentMachine: 'Ansible/os-settings_playbook.yml'
-        inventoriesAgentMachine: inlineContent
-        inventoryInlineContentAgentMachine: |
-          [hana]
-          $(privateip)
-        args: -vv 
-        failOnStdErr: false
-      condition: and(eq(${{ parameters.osprep }}, true), eq(variables.usepyth3, false))
-
-- stage: Install_HANA
-  condition: eq(${{ parameters.hanadbinstallation }}, true)
-  jobs:
-  - job: Install_HANA
-    steps:
-    - checkout: none
-    - script: |
-        #!/bin/bash
-        privateip=`cat ~/Inventory/${{ parameters.vmname }}.privateip`
-        echo "##vso[task.setvariable variable=privateip]$privateip"
-        exit 0
-      displayName: Get private IP for following ansible tasks 
-      failOnStderr: false
-    - task: Ansible@0
-      displayName: 'HANA Installation (Ansible)'
-      inputs:
-        ansibleInterface: 'agentMachine'
-        playbookPathOnAgentMachine: 'Ansible/saphana-install_playbook.yml'
-        inventoriesAgentMachine: inlineContent
-        inventoryInlineContentAgentMachine: |
-          [hana]
-          $(privateip)
-        args: -vv -e sap_sid=${{ parameters.sid }} -e sap_hostname=${{ parameters.hostname }} -e sap_instancenum=${{ parameters.nr }} -e pw_db_system=$(hana-pw) 
-        failOnStdErr: false
-
+- script: |
+    #!/bin/bash
+    mkdir -p ~/Inventory
+    echo $(arm_output) > ~/Inventory/${{ parameters.vmname }}.json
+  displayName: Write Inventory JSON
+  failOnStderr: false
