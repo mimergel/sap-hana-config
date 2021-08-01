@@ -30,7 +30,7 @@ steps:
     mkdir ~/Azure_SAP_Automated_Deployment; cd $_
     git clone --single-branch --branch beta https://github.com/Azure/sap-hana.git
     git clone https://github.com/mimergel/sap-hana.config.git
-    displayName: Run Prepare Script
+  displayName: Run Prepare Script
   failOnStderr: false
 
 - script: |
