@@ -14,7 +14,8 @@ trigger:
   none
 
 pool:
-  name: $(AgentPool)
+  vmImage: ubuntu-latest
+#  name: $(AgentPool)
 
 name: SAP-Landingzone-Deployment_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
 
