@@ -28,6 +28,7 @@ steps:
     mv terraform ~/bin
     export PATH=$PATH:~/bin
     mkdir ~/Azure_SAP_Automated_Deployment; cd $_
+    git config --global url."git@github.com:".insteadOf "https://github.com/"
     git clone --single-branch --branch beta https://github.com/Azure/sap-hana.git
     git clone https://github.com/mimergel/sap-hana.config.git
   displayName: Run Prepare Script
