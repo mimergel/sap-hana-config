@@ -35,6 +35,6 @@ steps:
 - script: |
     #!/bin/bash
     mkdir -p ~/Inventory
-    echo $(arm_output) > ~/Inventory/${{ parameters.vmname }}.json
+    echo $(arm_output) > ~/Inventory/testfile.json
   displayName: Write Inventory JSON
   failOnStderr: false
