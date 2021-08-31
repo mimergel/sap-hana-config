@@ -18,14 +18,34 @@ pool:
 
 # variables:
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+stages:
+- stage: Publish_Pipeline_Artifact
+  jobs:
+  - job: Publish_Pipeline_Artifact
+    steps:
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish Pipeline Artifact'
+      inputs:
+        targetPath: '$(System.DefaultWorkingDirectory)'
+        artifact: hana
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+- stage: Base-OS-Config
+  condition: eq(${{ osprep }}, true)
+  jobs:
+  - job: Base-OS-Config
+    steps:
+    - checkout: none
+    - task: Ansible@0
+      displayName: 'Base OS Config'
+      inputs:
+        ansibleInterface: 'agentMachine'
+        playbookPathOnAgentMachine: 'playbook_01_os_base_config.yaml'
+        inventoriesAgentMachine: inlineContent
+        inventoryInlineContentAgentMachine: |
+          [hana]
+          $(privateip)
+        args: -vv 
+
 
 - task: Ansible@0
   displayName: Base OS Config
@@ -35,13 +55,3 @@ steps:
     inventoriesAgentMachine: 'file'
     inventoryFileOnAgentMachine: 'ansible.cfg'
 
-    - task: Ansible@0
-      displayName: 'OS Preparations RHEL7 / SLES 12 (Ansible)'
-      inputs:
-        ansibleInterface: 'agentMachine'
-        playbookPathOnAgentMachine: 'playbook_01_os_base_config.yaml'
-        inventoriesAgentMachine: inlineContent
-        inventoryInlineContentAgentMachine: |
-          [hana]
-          $(privateip)
-        args: -vv 
