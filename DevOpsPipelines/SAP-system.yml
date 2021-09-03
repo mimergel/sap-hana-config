@@ -5,10 +5,71 @@
 
 parameters:
 
-- name: osprep
-  displayName: OS Preparations
+- name: baseosconfig
+  displayName: Base OS Config
   type: boolean
   default: true
+
+- name: saposconfig
+  displayName: SAP specific OS Config
+  type: boolean
+  default: true
+
+- name: bomprocessing
+  displayName: BOM Processing
+  type: boolean
+  default: true
+
+- name: hanadbinstall
+  displayName: HANA DB Install 
+  type: boolean
+  default: true
+
+- name: scsinstall
+  displayName: SCS Install
+  type: boolean
+  default: true
+
+- name: saposconfig
+  displayName: DB Load
+  type: boolean
+  default: true
+
+- name: pasinstall
+  displayName: PAS Install
+  type: boolean
+  default: true
+
+- name: appinstall
+  displayName: APP Install
+  type: boolean
+  default: false
+
+- name: webdispinstall
+  displayName: WebDisp Install
+  type: boolean
+  default: false
+
+- name: hsrsetup
+  displayName: HSR Setup
+  type: boolean
+  default: false
+
+- name: pacemakersetup
+  displayName: Pacemaker Setup
+  type: boolean
+  default: false
+
+- name: pacemakerscssetup
+  displayName: Pacemaker SCS Setup
+  type: boolean
+  default: false
+
+- name: pacemakerhanasetup
+  displayName: Pacemaker HANA Setup
+  type: boolean
+  default: false
+
 
 trigger:
   none
