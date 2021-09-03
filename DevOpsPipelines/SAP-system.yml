@@ -8,37 +8,37 @@ parameters:
 - name: baseosconfig
   displayName: Base OS Config
   type: boolean
-  default: true
+  default: false
 
 - name: saposconfig
   displayName: SAP specific OS Config
   type: boolean
-  default: true
+  default: false
 
 - name: bomprocessing
   displayName: BOM Processing
   type: boolean
-  default: true
+  default: false
 
 - name: hanadbinstall
   displayName: HANA DB Install 
   type: boolean
-  default: true
+  default: false
 
 - name: scsinstall
   displayName: SCS Install
   type: boolean
-  default: true
+  default: false
 
 - name: dbload
   displayName: DB Load
   type: boolean
-  default: true
+  default: false
 
 - name: pasinstall
   displayName: PAS Install
   type: boolean
-  default: true
+  default: false
 
 - name: appinstall
   displayName: APP Install
@@ -69,7 +69,6 @@ parameters:
   displayName: Pacemaker HANA Setup
   type: boolean
   default: false
-
 
 trigger:
   none
