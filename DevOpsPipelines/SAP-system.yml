@@ -90,7 +90,7 @@ stages:
         artifact: hana
 
 - stage: Base-OS-Config
-  condition: eq(${{ baseosconfig }}, true)
+  condition: eq(${{ parameters.baseosconfig }}, true)
   jobs:
   - job: Base-OS-Config
     steps:
