@@ -89,14 +89,14 @@ stages:
         targetPath: '$(System.DefaultWorkingDirectory)'
         artifact: hana
 
-- stage: Base-OS-Config
+- stage: BaseOSConfig
   condition: eq(${{ parameters.baseosconfig }}, true)
   jobs:
-  - job: Base-OS-Config
+  - job: BaseOSConfig
     steps:
     - checkout: none
     - task: Ansible@0
-      displayName: 'Base OS Config'
+      displayName: BaseOSConfig
       inputs:
         ansibleInterface: 'agentMachine'
         playbookPathOnAgentMachine: '${DEPLOYMENT_REPO_PATH}deploy/ansible/playbook_01_os_base_config.yaml'
