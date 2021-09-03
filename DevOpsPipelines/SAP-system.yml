@@ -8,7 +8,7 @@ parameters:
 - name: baseosconfig
   displayName: Base OS Config
   type: boolean
-  default: false
+  default: true
 
 - name: saposconfig
   displayName: SAP specific OS Config
