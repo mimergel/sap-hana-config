@@ -30,7 +30,7 @@ parameters:
   type: boolean
   default: true
 
-- name: saposconfig
+- name: dbload
   displayName: DB Load
   type: boolean
   default: true
