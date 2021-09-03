@@ -99,7 +99,7 @@ stages:
       displayName: BaseOSConfig
       inputs:
         ansibleInterface: 'agentMachine'
-        playbookPathOnAgentMachine: '${DEPLOYMENT_REPO_PATH}deploy/ansible/playbook_01_os_base_config.yaml'
+        playbookPathOnAgentMachine: '${DEPLOYMENT_REPO_PATH}/deploy/ansible/playbook_01_os_base_config.yaml'
         inventoriesAgentMachine: inlineContent
         inventoryInlineContentAgentMachine: |
           [hana]
