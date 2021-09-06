@@ -5,6 +5,11 @@
 
 parameters:
 
+- name: sap_sid
+  displayName: SAP SID
+  type: string
+  default: X00
+
 - name: baseosconfig
   displayName: Base OS Config
   type: boolean
