@@ -94,26 +94,24 @@ stages:
         targetPath: '$(System.DefaultWorkingDirectory)'
         artifact: hana
 
-- stage: BaseOSConfig
+- stage: Base_OS_Config
   condition: eq(${{ parameters.baseosconfig }}, true)
   jobs:
-  - job: BaseOSConfig
+  - job: Base_OS_Config
     steps:
     - checkout: none
     - script: |
         #!/bin/bash
-        sudo ln -s $(DEPLOYMENT_REPO_PATH) repo
+        sudo ln -s $(DEPLOYMENT_BASE) base
         ls -l
-      displayName: Link to DEPLOYMENT_REPO_PATH
+      displayName: Link to DEPLOYMENT_BASE
       failOnStderr: true
 
     - task: Ansible@0
       displayName: BaseOSConfig
       inputs:
         ansibleInterface: 'agentMachine'
-        playbookPathOnAgentMachine: 'repo/deploy/ansible/playbook_01_os_base_config.yaml'
-        inventoriesAgentMachine: inlineContent
-        inventoryInlineContentAgentMachine: |
-          [hana]
-          10.110.0.4
-        args: -vv 
+        playbookPathOnAgentMachine: 'base/sap-hana/deploy/ansible/playbook_01_os_base_config.yaml'
+        inventoriesAgentMachine: 'file'
+        inventoryFileOnAgentMachine: 'base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/X00-hosts.yaml'
+        args: '-vv --private-key $(private-key) --extra-vars="@base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/sap-parameters.yaml"'
