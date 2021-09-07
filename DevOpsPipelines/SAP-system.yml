@@ -100,11 +100,18 @@ stages:
   - job: BaseOSConfig
     steps:
     - checkout: none
+    - script: |
+        #!/bin/bash
+        sudo ln -s $(DEPLOYMENT_REPO_PATH) repo
+        echo $(arm_output) > ~/Inventory/${{ parameters.vmname }}.json
+      displayName: Link to DEPLOYMENT_REPO_PATH
+      failOnStderr: true
+
     - task: Ansible@0
       displayName: BaseOSConfig
       inputs:
         ansibleInterface: 'agentMachine'
-        playbookPathOnAgentMachine: '${DEPLOYMENT_REPO_PATH}/deploy/ansible/playbook_01_os_base_config.yaml'
+        playbookPathOnAgentMachine: 'repo/deploy/ansible/playbook_01_os_base_config.yaml'
         inventoriesAgentMachine: inlineContent
         inventoryInlineContentAgentMachine: |
           [hana]
