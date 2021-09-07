@@ -113,7 +113,7 @@ stages:
         playbookPathOnAgentMachine: 'base/sap-hana/deploy/ansible/playbook_01_os_base_config.yaml'
         inventoriesAgentMachine: 'file'
         inventoryFileOnAgentMachine: 'base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/X00_hosts.yaml'
-        args: '-vv --private-key base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/sshkey --extra-vars="@base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/sap-parameters.yaml" --extra-vars="_workspace_directory=base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/'
+        args: '-vv --private-key base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/sshkey --extra-vars="@base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/sap-parameters.yaml" --extra-vars="_workspace_directory=$(Build.Repository.LocalPath)/base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/"'
 
 - stage: SAP_OS_Config
   condition: eq(${{ parameters.saposconfig }}, true)
@@ -128,4 +128,4 @@ stages:
         playbookPathOnAgentMachine: 'base/sap-hana/deploy/ansible/playbook_02_os_sap_specific_config.yaml'
         inventoriesAgentMachine: 'file'
         inventoryFileOnAgentMachine: 'base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/X00_hosts.yaml'
-        args: '-vv --private-key base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/sshkey --extra-vars="@base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/sap-parameters.yaml" --extra-vars="_workspace_directory=base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/"'
+        args: '-vv --private-key base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/sshkey --extra-vars="@base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/sap-parameters.yaml" --extra-vars="_workspace_directory=$(Build.Repository.LocalPath)/base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/"'
