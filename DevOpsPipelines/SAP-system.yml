@@ -114,3 +114,18 @@ stages:
         inventoriesAgentMachine: 'file'
         inventoryFileOnAgentMachine: 'base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/X00_hosts.yaml'
         args: '-vv --private-key base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/sshkey --extra-vars="@base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/sap-parameters.yaml"'
+
+- stage: SAP_OS_Config
+  condition: eq(${{ parameters.saposconfig }}, true)
+  jobs:
+  - job: SAP_OS_Config
+    steps:
+    - checkout: none
+    - task: Ansible@0
+      displayName: SAP_OS_Config
+      inputs:
+        ansibleInterface: 'agentMachine'
+        playbookPathOnAgentMachine: 'base/sap-hana/deploy/ansible/playbook_02_os_sap_specific_config.yaml'
+        inventoriesAgentMachine: 'file'
+        inventoryFileOnAgentMachine: 'base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/X00_hosts.yaml'
+        args: '-vv --private-key base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/sshkey --extra-vars="@base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/sap-parameters.yaml"'
