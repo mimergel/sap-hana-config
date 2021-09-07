@@ -92,7 +92,7 @@ stages:
     - checkout: none
     - script: |
         #!/bin/bash
-        if [ -f base ]; then
+        if [ -e base ]; then
           echo "link to base exists"
         else 
             echo "creating link to base"
