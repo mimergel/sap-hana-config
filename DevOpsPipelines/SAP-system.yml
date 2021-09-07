@@ -103,7 +103,7 @@ stages:
     - script: |
         #!/bin/bash
         sudo ln -s $(DEPLOYMENT_REPO_PATH) repo
-        echo $(arm_output) > ~/Inventory/${{ parameters.vmname }}.json
+        ls -l
       displayName: Link to DEPLOYMENT_REPO_PATH
       failOnStderr: true
 
