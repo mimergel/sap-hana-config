@@ -84,10 +84,9 @@ pool:
 # variables:
 
 stages:
-- stage: Base_OS_Config
-  condition: eq(${{ parameters.baseosconfig }}, true)
+- stage: Preparation
   jobs:
-  - job: Base_OS_Config
+  - job: Preparation
     steps:
     - checkout: none
     - script: |
@@ -101,8 +100,14 @@ stages:
       displayName: Link to DEPLOYMENT_BASE
       failOnStderr: true
 
+- stage: Base_OS_Config
+  condition: eq(${{ parameters.baseosconfig }}, true)
+  jobs:
+  - job: Base_OS_Config
+    steps:
+    - checkout: none
     - task: Ansible@0
-      displayName: BaseOSConfig
+      displayName: Base_OS_Config
       inputs:
         ansibleInterface: 'agentMachine'
         playbookPathOnAgentMachine: 'base/sap-hana/deploy/ansible/playbook_01_os_base_config.yaml'
