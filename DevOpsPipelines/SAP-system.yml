@@ -103,5 +103,5 @@ stages:
         ansibleInterface: 'agentMachine'
         playbookPathOnAgentMachine: 'base/sap-hana/deploy/ansible/playbook_01_os_base_config.yaml'
         inventoriesAgentMachine: 'file'
-        inventoryFileOnAgentMachine: 'base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/X00-hosts.yaml'
+        inventoryFileOnAgentMachine: 'base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/X00_hosts.yaml'
         args: '-vv --private-key base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/sshkey --extra-vars="@base/WORKSPACES/SYSTEM/DEV-WEEU-SAP01-X00/sap-parameters.yaml"'
