@@ -92,8 +92,12 @@ stages:
     - checkout: none
     - script: |
         #!/bin/bash
-        sudo ln -s $(DEPLOYMENT_BASE) base
-        ls -l
+        if [ -f base ]; then
+          echo "link to base exists"
+        else 
+            echo "creating link to base"
+            sudo ln -s $(DEPLOYMENT_BASE) base
+        fi
       displayName: Link to DEPLOYMENT_BASE
       failOnStderr: true
 
