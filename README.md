@@ -1,4 +1,4 @@
-# Step by Step Guide to Deploy SAP Systems via Azure DevOps
+# Deploy SAP Systems via Azure DevOps
 
 # Prerequesites for SAP DevOps Deployments
 * [Azure Subscription](https://portal.azure.com/) 
@@ -37,6 +37,13 @@ Note down all details, especially the Secret in a password store
         SAVE -> SAVE
 
     Repeat this for all Pipeline YAML Files
+
+## Adapt Permissions for the Repo
+    Give the "SAP-Deployment Build Service (userid)" Contribute permissions
+
+## Adapt the confirguration files
+    set deployer_enable_public_ip=false in the *tfvars file of the DEPLOYER to avoid failing pipeline due to ssh timeout
+    can add public IP later before step 5 if required
 
 ## Run the Pipelines
     01-prepare-region
