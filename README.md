@@ -21,6 +21,8 @@ Note down all details, especially the Secret in a password store
     ARM_CLIENT_SECRET
     ARM_TENANT_ID
     AZURECONNECTIONNAME
+    S-Username
+    S-Password
     optional:   skipComponentGovernanceDetection    true
 
 ## Create the Piplines
