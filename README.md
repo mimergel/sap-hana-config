@@ -3,18 +3,16 @@
 # Prerequesites for SAP DevOps Deployments
 * [Azure Subscription](https://portal.azure.com/) 
 * [Azure DevOps](http://dev.azure.com/) and [Github](http://github.com/) account
-* SAP User for the [Software Downloads](https://launchpad.support.sap.com/)
+* SAP S-User for the [Software Downloads](https://launchpad.support.sap.com/)
 
 # Preparations
-* Create a new Project in Azure DevOps
+* Create a Project in Azure DevOps
 * Import this repository into the Azure Devops repo: https://github.com/mimergel/sap-hana-config.git
-
-## Create a service principle in Azure CLI
-`az ad sp create-for-rbac --role="Contributor" --scopes="/subscriptions/<Your subscription ID>" --name="<a name>"`
+* Create a service principle in Azure CLI
+`az ad sp create-for-rbac --role="Contributor" --scopes="/subscriptions/<Your subscription ID>" --name="<a name>"` <br />
 Note down all details, especially the Secret in a password store
-
-## Create a service connection to your Azure Subscription (Type: Azure Resource Manager)
-*Service principle (manual)
+* Create a service connection to your Azure Subscription (Type: Azure Resource Manager)
+    Service principle (manual)
 
 ## Create a Variable group in the Library 
 * Required variables:
