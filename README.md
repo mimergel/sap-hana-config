@@ -1,29 +1,29 @@
 # Step by Step Guide to Deploy SAP Systems via Azure DevOps
 
 # Prerequesites for SAP DevOps Deployments
-    [Azure Subscription](https://portal.azure.com/) 
-    [Azure DevOps](http://dev.azure.com/) and [Github](http://github.com/) account
-    SAP User for the [Software Downloads](https://launchpad.support.sap.com/)
+* [Azure Subscription](https://portal.azure.com/) 
+* [Azure DevOps](http://dev.azure.com/) and [Github](http://github.com/) account
+* SAP User for the [Software Downloads](https://launchpad.support.sap.com/)
 
 # Preparations
-    Create a new Project in Azure DevOps
-    Import this repository into the Azure Devops repo: https://github.com/mimergel/sap-hana-config.git
+* Create a new Project in Azure DevOps
+* Import this repository into the Azure Devops repo: https://github.com/mimergel/sap-hana-config.git
 
 ## Create a service principle in Azure CLI
-    az ad sp create-for-rbac --role="Contributor" --scopes="/subscriptions/<Your subscription ID>" --name="<a name>"
-    Note down all details, especially the Secret in a password store
+`az ad sp create-for-rbac --role="Contributor" --scopes="/subscriptions/<Your subscription ID>" --name="<a name>"`
+Note down all details, especially the Secret in a password store
 
 ## Create a service connection to your Azure Subscription (Type: Azure Resource Manager)
-    Service principle (manual)
+*Service principle (manual)
 
 ## Create a Variable group in the Library 
-    Required variables:
-        ARM_SUBSCRIPTION_ID
-        ARM_CLIENT_ID
-        ARM_CLIENT_SECRET
-        ARM_TENANT_ID
-        AZURECONNECTIONNAME
-        skipComponentGovernanceDetection    optional parameter, set to true 
+* Required variables:
+    ARM_SUBSCRIPTION_ID
+    ARM_CLIENT_ID
+    ARM_CLIENT_SECRET
+    ARM_TENANT_ID
+    AZURECONNECTIONNAME
+    optional:   skipComponentGovernanceDetection    true
 
 ## Create the Piplines
     Where is your code? -> Azure Repos Git
