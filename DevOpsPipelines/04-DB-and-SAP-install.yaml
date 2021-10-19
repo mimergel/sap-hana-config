@@ -1,0 +1,265 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+parameters:
+
+- name: sap_sid
+  displayName: SAP SID
+  type: string
+  default: X02
+
+- name: bom_base_name
+  displayName: BOM Base Name
+  type: string
+  default: S41909SPS03_v0004ms
+
+- name: sap_fqdn
+  displayName: SAP Domain Name
+  type: string
+  default: stromae.net
+
+- name: systemfolder
+  displayName: ENV-LOCA-VNET-SID
+  type: string
+  default: DEV-WEEU-SAP01-X02
+
+- name: baseosconfig
+  displayName: Base OS Config
+  type: boolean
+  default: true
+
+- name: saposconfig
+  displayName: SAP specific OS Config
+  type: boolean
+  default: true
+
+- name: bomprocessing
+  displayName: BOM Processing
+  type: boolean
+  default: true
+
+- name: hanadbinstall
+  displayName: HANA DB Install 
+  type: boolean
+  default: true
+
+- name: scsinstall
+  displayName: SCS Install
+  type: boolean
+  default: true
+
+- name: dbload
+  displayName: DB Load
+  type: boolean
+  default: true
+
+- name: pasinstall
+  displayName: PAS Install
+  type: boolean
+  default: true
+
+- name: appinstall
+  displayName: APP Install
+  type: boolean
+  default: true
+
+- name: webdispinstall
+  displayName: WebDisp Install
+  type: boolean
+  default: false
+
+- name: hsrsetup
+  displayName: HSR Setup
+  type: boolean
+  default: false
+
+- name: pacemakersetup
+  displayName: Pacemaker Setup
+  type: boolean
+  default: false
+
+- name: pacemakerscssetup
+  displayName: Pacemaker SCS Setup
+  type: boolean
+  default: false
+
+- name: pacemakerhanasetup
+  displayName: Pacemaker HANA Setup
+  type: boolean
+  default: false
+
+trigger:
+  none
+
+pool:
+  name: $(agent)
+
+variables:
+  SID: ${{ parameters.sap_sid }}
+  folder: ${{ parameters.systemfolder }}
+  bom_base_name: ${{ parameters.bom_base_name }}
+  sap_fqdn: ${{ parameters.sap_fqdn }}
+
+name: $(SID)_$(folder)_$(bom_base_name)_$(sap_fqdn)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+
+stages:
+- stage: Preparation
+  jobs:
+  - job: Preparation
+    steps:
+    - script: |
+        #!/bin/bash
+        # create a link between devops agent work directory and the local workspace on the deployer vm 
+        if [ -e base ]; then
+          echo "link to base exists"
+        else 
+            echo "creating link to base"
+            sudo ln -s $(DEPLOYMENT_BASE) base
+        fi
+      displayName: Link to Deployment Base
+      failOnStderr: true
+
+    - script: |
+        #!/bin/bash
+        # Add BOM Base Name and SAP FQDN to deployment configuration
+        sed -i 's/.*bom_base_name:.*/bom_base_name:   $(bom_base_name)/' base/WORKSPACES/SYSTEM/$(folder)/sap-parameters.yaml
+        sed -i 's/.*sap_fqdn:.*/sap_fqdn:   $(sap_fqdn)/' base/WORKSPACES/SYSTEM/$(folder)/sap-parameters.yaml
+      displayName: Add BOM Base Name and SAP FQDN to deployment configuration
+      failOnStderr: true
+
+- stage: Base_OS_Config
+  condition: eq(${{ parameters.baseosconfig }}, true)
+  jobs:
+  - job: Base_OS_Config
+    steps:
+    - checkout: none
+    - task: Ansible@0
+      displayName: Base_OS_Config
+      inputs:
+        ansibleInterface: 'agentMachine'
+        playbookPathOnAgentMachine: 'base/sap-hana/deploy/ansible/playbook_01_os_base_config.yaml'
+        inventoriesAgentMachine: 'file'
+        inventoryFileOnAgentMachine: 'base/WORKSPACES/SYSTEM/$(folder)/$(SID)_hosts.yaml'
+        args: '--private-key base/WORKSPACES/SYSTEM/$(folder)/sshkey --extra-vars="@base/WORKSPACES/SYSTEM/$(folder)/sap-parameters.yaml" --extra-vars="_workspace_directory=$(Build.Repository.LocalPath)/base/WORKSPACES/SYSTEM/$(folder)/"'
+
+- stage: SAP_OS_Config
+  condition: eq(${{ parameters.saposconfig }}, true)
+  jobs:
+  - job: SAP_OS_Config
+    steps:
+    - checkout: none
+    - task: Ansible@0
+      displayName: SAP_OS_Config
+      inputs:
+        ansibleInterface: 'agentMachine'
+        playbookPathOnAgentMachine: 'base/sap-hana/deploy/ansible/playbook_02_os_sap_specific_config.yaml'
+        inventoriesAgentMachine: 'file'
+        inventoryFileOnAgentMachine: 'base/WORKSPACES/SYSTEM/$(folder)/$(SID)_hosts.yaml'
+        args: '--private-key base/WORKSPACES/SYSTEM/$(folder)/sshkey --extra-vars="@base/WORKSPACES/SYSTEM/$(folder)/sap-parameters.yaml" --extra-vars="_workspace_directory=$(Build.Repository.LocalPath)/base/WORKSPACES/SYSTEM/$(folder)/"'
+
+- stage: BOM_Processing
+  condition: eq(${{ parameters.bomprocessing }}, true)
+  jobs:
+  - job: BOM_Processing
+    steps:
+    - checkout: none
+    - task: Ansible@0
+      displayName: BOM_Processing
+      inputs:
+        ansibleInterface: 'agentMachine'
+        playbookPathOnAgentMachine: 'base/sap-hana/deploy/ansible/playbook_03_bom_processing.yaml'
+        inventoriesAgentMachine: 'file'
+        inventoryFileOnAgentMachine: 'base/WORKSPACES/SYSTEM/$(folder)/$(SID)_hosts.yaml'
+        args: '--private-key base/WORKSPACES/SYSTEM/$(folder)/sshkey --extra-vars="@base/WORKSPACES/SYSTEM/$(folder)/sap-parameters.yaml" --extra-vars="_workspace_directory=$(Build.Repository.LocalPath)/base/WORKSPACES/SYSTEM/$(folder)/"'
+
+- stage: HANA_DB_Install
+  condition: eq(${{ parameters.hanadbinstall }}, true)
+  jobs:
+  - job: HANA_DB_Install
+    steps:
+    - checkout: none
+    - task: Ansible@0
+      displayName: HANA_DB_Install
+      inputs:
+        ansibleInterface: 'agentMachine'
+        playbookPathOnAgentMachine: 'base/sap-hana/deploy/ansible/playbook_04_00_00_hana_db_install.yaml'
+        inventoriesAgentMachine: 'file'
+        inventoryFileOnAgentMachine: 'base/WORKSPACES/SYSTEM/$(folder)/$(SID)_hosts.yaml'
+        args: '--private-key base/WORKSPACES/SYSTEM/$(folder)/sshkey --extra-vars="@base/WORKSPACES/SYSTEM/$(folder)/sap-parameters.yaml" --extra-vars="_workspace_directory=$(Build.Repository.LocalPath)/base/WORKSPACES/SYSTEM/$(folder)/"'
+
+- stage: SCS_Install
+  condition: eq(${{ parameters.scsinstall }}, true)
+  jobs:
+  - job: SCS_Install
+    steps:
+    - checkout: none
+    - task: Ansible@0
+      displayName: SCS_Install
+      inputs:
+        ansibleInterface: 'agentMachine'
+        playbookPathOnAgentMachine: 'base/sap-hana/deploy/ansible/playbook_05_00_00_sap_scs_install.yaml'
+        inventoriesAgentMachine: 'file'
+        inventoryFileOnAgentMachine: 'base/WORKSPACES/SYSTEM/$(folder)/$(SID)_hosts.yaml'
+        args: '--private-key base/WORKSPACES/SYSTEM/$(folder)/sshkey --extra-vars="@base/WORKSPACES/SYSTEM/$(folder)/sap-parameters.yaml" --extra-vars="_workspace_directory=$(Build.Repository.LocalPath)/base/WORKSPACES/SYSTEM/$(folder)/" -e ansible_ssh_pass="$(ANSIBLE_PASSWORD)"'
+
+- stage: DB_Load
+  condition: eq(${{ parameters.dbload }}, true)
+  jobs:
+  - job: DB_Load
+    steps:
+    - checkout: none
+    - task: Ansible@0
+      displayName: DB_Load
+      inputs:
+        ansibleInterface: 'agentMachine'
+        playbookPathOnAgentMachine: 'base/sap-hana/deploy/ansible/playbook_05_01_sap_dbload.yaml'
+        inventoriesAgentMachine: 'file'
+        inventoryFileOnAgentMachine: 'base/WORKSPACES/SYSTEM/$(folder)/$(SID)_hosts.yaml'
+        args: '--private-key base/WORKSPACES/SYSTEM/$(folder)/sshkey --extra-vars="@base/WORKSPACES/SYSTEM/$(folder)/sap-parameters.yaml" --extra-vars="_workspace_directory=$(Build.Repository.LocalPath)/base/WORKSPACES/SYSTEM/$(folder)/"'
+
+- stage: PAS_Install
+  condition: eq(${{ parameters.pasinstall }}, true)
+  jobs:
+  - job: PAS_Install
+    steps:
+    - checkout: none
+    - task: Ansible@0
+      displayName: PAS_Install
+      inputs:
+        ansibleInterface: 'agentMachine'
+        playbookPathOnAgentMachine: 'base/sap-hana/deploy/ansible/playbook_05_02_sap_pas_install.yaml'
+        inventoriesAgentMachine: 'file'
+        inventoryFileOnAgentMachine: 'base/WORKSPACES/SYSTEM/$(folder)/$(SID)_hosts.yaml'
+        args: '--private-key base/WORKSPACES/SYSTEM/$(folder)/sshkey --extra-vars="@base/WORKSPACES/SYSTEM/$(folder)/sap-parameters.yaml" --extra-vars="_workspace_directory=$(Build.Repository.LocalPath)/base/WORKSPACES/SYSTEM/$(folder)/"'
+
+- stage: APP_Install
+  condition: eq(${{ parameters.appinstall }}, true)
+  jobs:
+  - job: APP_Install
+    steps:
+    - checkout: none
+    - task: Ansible@0
+      displayName: APP_Install
+      inputs:
+        ansibleInterface: 'agentMachine'
+        playbookPathOnAgentMachine: 'base/sap-hana/deploy/ansible/playbook_05_03_sap_app_install.yaml'
+        inventoriesAgentMachine: 'file'
+        inventoryFileOnAgentMachine: 'base/WORKSPACES/SYSTEM/$(folder)/$(SID)_hosts.yaml'
+        args: '--private-key base/WORKSPACES/SYSTEM/$(folder)/sshkey --extra-vars="@base/WORKSPACES/SYSTEM/$(folder)/sap-parameters.yaml" --extra-vars="_workspace_directory=$(Build.Repository.LocalPath)/base/WORKSPACES/SYSTEM/$(folder)/"'
+
+- stage: WebDisp_Install
+  condition: eq(${{ parameters.webdispinstall }}, true)
+  jobs:
+  - job: WebDisp_Install
+    steps:
+    - checkout: none
+    - task: Ansible@0
+      displayName: WebDisp_Install
+      inputs:
+        ansibleInterface: 'agentMachine'
+        playbookPathOnAgentMachine: 'base/sap-hana/deploy/ansible/playbook_05_04_sap_web_install.yaml'
+        inventoriesAgentMachine: 'file'
+        inventoryFileOnAgentMachine: 'base/WORKSPACES/SYSTEM/$(folder)/$(SID)_hosts.yaml'
+        args: '--private-key base/WORKSPACES/SYSTEM/$(folder)/sshkey --extra-vars="@base/WORKSPACES/SYSTEM/$(folder)/sap-parameters.yaml" --extra-vars="_workspace_directory=$(Build.Repository.LocalPath)/base/WORKSPACES/SYSTEM/$(folder)/"'
