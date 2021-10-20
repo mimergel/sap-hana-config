@@ -18,15 +18,17 @@ Note down all details, especially the Secret in a password store
 * Required variables:
     ARM_SUBSCRIPTION_ID
     ARM_CLIENT_ID
-    ARM_CLIENT_SECRET   (mark as password)
+    ARM_CLIENT_SECRET              (mark as password for masking)
     ARM_TENANT_ID
     AZURECONNECTIONNAME
     ANSIBLE_HOST_KEY_CHECKING=false
     ANSIBLE_REMOTE_USER=azureadm
     ANSIBLE_PYTHON_INTERPRETER=auto_silent
     ANSIBLE_CALLBACK_WHITELIST=profile_tasks
-    S-Username
-    S-Password          (mark as password)
+    Repository
+    Branch
+    S-Username          S0012345678
+    S-Password          xxxxxxxxxxx (mark as password for masking)
     optional:   skipComponentGovernanceDetection    true
 
 ## Create the Piplines
@@ -60,6 +62,6 @@ Note down all details, especially the Secret in a password store
     https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/v2-linux?view=azure-devops 
 
 ## Run the Pipelines 4 & 5
-    04-sap-binaries
+    04-sap-binary-processing
     05-DB-and-SAP-install
 
