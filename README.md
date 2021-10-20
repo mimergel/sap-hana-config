@@ -47,10 +47,15 @@ Note down all details, especially the Secret in a password store
     set deployer_enable_public_ip=false in the *tfvars file of the DEPLOYER to avoid failing pipeline due to ssh timeout
     can add public IP later before step 5 if required
 
-## Run the Pipelines
+## Run the Pipelines 1, 2 & 3
     01-prepare-region
     02-sap-workload-zone
     03-sap-system-deployment
+
+## Setup Self-hosted Deployment Agent
+    https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/v2-linux?view=azure-devops 
+    
+## Run the Pipelines 4 & 5
     04-sap-binaries
     05-DB-and-SAP-install
 
