@@ -5,10 +5,10 @@
 
 parameters:
 
-- name: system_folder
+- name: workloadzone
   displayName: ENV-LOCA-VNET-INFRASTRUCTURE
   type: string
-  default: DEV-NOEU-SAP01-INFRASTRUCTURE
+  default: DEV-GEWC-SAP01-INFRASTRUCTURE
 
 - name: environment
   displayName: Deployer Environment (MGMT, DEV, QUA, PRD, ...)
@@ -38,14 +38,14 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  systemfolder: ${{ parameters.system_folder }}
-  systemconfig: ${{ parameters.system_folder }}.tfvars
+  zonefolder: ${{ parameters.workloadzone }}
+  zoneconfig: ${{ parameters.workloadzone }}.tfvars
   env: ${{ parameters.environment }}
   log: logfile_$(Build.BuildId)
   rep: ${{ parameters.repository }}
   bra: ${{ parameters.branch }}
 
-name: $(systemfolder)_Cleanup_${{ parameters.cleanup }}_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+name: $(zonefolder)_Cleanup_${{ parameters.cleanup }}_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
 
 stages:
 - stage: Deploy_SAP_Workloadzone
@@ -74,19 +74,19 @@ stages:
           az account set --subscription $(ARM_SUBSCRIPTION_ID)
         echo -e "$green--- --- Convert config file to UX format ---$reset"
           sudo apt-get -qq install dos2unix
-          dos2unix -q LANDSCAPE/$(systemfolder)/$(systemconfig)
+          dos2unix -q LANDSCAPE/$(zonefolder)/$(zoneconfig)
         echo -e "$green--- Prepare the exchange of information from devops agent back to the repository ---$reset"
           organization=$(echo $(System.CollectionUri) | cut -d'/' -f4)
           git config  http.https://$organization@dev.azure.com/$organization/$(System.TeamProject)/_git/$(Build.Repository.Name).extraheader "AUTHORIZATION: bearer $SYSTEM_ACCESSTOKEN"
         echo -e "$green--- Run the prepare region script that deploys the subscription hub with the Deployer VM and SAP Library ---$reset"
-          cd LANDSCAPE/$(systemfolder)
-          $DEPLOYMENT_REPO_PATH/deploy/scripts/install_workloadzone.sh --parameterfile $(systemconfig) --deployer_environment $(env) --subscription $(ARM_SUBSCRIPTION_ID) --spn_id $(ARM_CLIENT_ID) --spn_secret $(ARM_CLIENT_SECRET) --tenant_id $(ARM_TENANT_ID) --auto-approve 
+          cd LANDSCAPE/$(zonefolder)
+          $DEPLOYMENT_REPO_PATH/deploy/scripts/install_workloadzone.sh --parameterfile $(zoneconfig) --deployer_environment $(env) --subscription $(ARM_SUBSCRIPTION_ID) --spn_id $(ARM_CLIENT_ID) --spn_secret $(ARM_CLIENT_SECRET) --tenant_id $(ARM_TENANT_ID) --auto-approve 
           cd $HOME
         echo -e "$green--- Add & update files in the DevOps Repository ---$reset"
           git config --global user.email "$(Build.RequestedForEmail)"
           git config --global user.name "$(Build.RequestedFor)" 
           git add .sap_deployment_automation    &>> /tmp/$(log)2
-          git add LANDSCAPE/$(systemfolder)/.terraform   &>> /tmp/$(log)2
+          git add LANDSCAPE/$(zonefolder)/.terraform   &>> /tmp/$(log)2
           git commit -m "Added updates from devops deployment $(Build.DefinitionName) [skip ci]" &>> /tmp/$(log)2
           git push origin HEAD:main             &>> /tmp/$(log)2
         echo "output the log ---$reset"
@@ -97,16 +97,16 @@ stages:
           SYSTEM_ACCESSTOKEN: $(System.AccessToken)
       failOnStderr: true
 
-- stage: Cleanup
+- stage: Cleanup_Workload_Zone
   condition: eq(${{ parameters.cleanup }}, true)
   jobs:
   - job: Remove_Deployer
     steps:
     - task: AzureResourceManagerTemplateDeployment@3
-      displayName: 'Remove Resource Group $(systemfolder)'
+      displayName: 'Remove Resource Group $(zonefolder)'
       inputs:
         deploymentScope: 'Resource Group'
         azureResourceManagerConnection: '$(AZURECONNECTIONNAME)'
         subscriptionId: '$(ARM_SUBSCRIPTION_ID)'
         action: 'DeleteRG'
-        resourceGroupName: '$(systemfolder)'
+        resourceGroupName: '$(zonefolder)'

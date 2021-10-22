@@ -8,12 +8,12 @@ parameters:
 - name: deployer_parameter
   displayName: ENV-LOCA-VNET-INFRASTRUCTURE
   type: string
-  default: MGMT-NOEU-DEP00-INFRASTRUCTURE
+  default: MGMT-GEWC-DEP00-INFRASTRUCTURE
 
 - name: library_parameter
   displayName: ENV-LOCA-SAP_LIBRARY
   type: string
-  default: MGMT-NOEU-SAP_LIBRARY
+  default: MGMT-GEWC-SAP_LIBRARY
 
 - name: repository
   displayName: Link to the Repository
@@ -79,7 +79,7 @@ stages:
           dos2unix -q DEPLOYER/$(deployerfolder)/$(deployerconfig)
           dos2unix -q LIBRARY/$(libraryfolder)/$(libraryconfig)
         echo -e "$green--- Running the prepare region script that deploys the subscription hub with the Deployer VM and SAP Library ---$reset"
-          $DEPLOYMENT_REPO_PATH/deploy/scripts/prepare_region.sh --deployer_parameter_file DEPLOYER/$(deployerfolder)/$(deployerconfig) --library_parameter_file LIBRARY/$(libraryfolder)/$(libraryconfig)  --subscription $(ARM_SUBSCRIPTION_ID)  --spn_id $(ARM_CLIENT_ID) --spn_secret $(ARM_CLIENT_SECRET) --tenant_id $(ARM_TENANT_ID)  --auto-approve &>> /tmp/$(log)1
+          $DEPLOYMENT_REPO_PATH/deploy/scripts/prepare_region.sh --deployer_parameter_file DEPLOYER/$(deployerfolder)/$(deployerconfig) --library_parameter_file LIBRARY/$(libraryfolder)/$(libraryconfig)  --subscription $(ARM_SUBSCRIPTION_ID)  --spn_id $(ARM_CLIENT_ID) --spn_secret $(ARM_CLIENT_SECRET) --tenant_id $(ARM_TENANT_ID)  --auto-approve   &>> /tmp/$(log)1
           cat /tmp/$(log)1
           # currently error log piped to file to avoid pipeline failure due to bash error messages
         echo -e "$green--- Adding deployment automation configuration to devops repository ---$reset"
@@ -98,7 +98,7 @@ stages:
           SYSTEM_ACCESSTOKEN: $(System.AccessToken)
       failOnStderr: true
 
-- stage: Cleanup
+- stage: Cleanup_Deployer_Library
   condition: eq(${{ parameters.cleanup }}, true)
   jobs:
   - job: Remove_Deployer

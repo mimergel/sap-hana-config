@@ -8,7 +8,7 @@ parameters:
 - name: sap_system
   displayName: ENV-LOCA-VNET-SID
   type: string
-  default: DEV-NOEU-SAP01-X01
+  default: DEV-GEWC-SAP01-E01
 
 - name: repository
   displayName: Link to the Repository

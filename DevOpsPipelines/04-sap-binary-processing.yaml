@@ -1,0 +1,136 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+parameters:
+
+- name: bom_base_name
+  displayName: BOM Base Name
+  type: string
+  default: S41909SPS03_v0005ms
+
+- name: sapbits_storage_account
+  displayName: SAP Binary Storage Account
+  type: string
+  default: mgmtgewcsaplib1a6
+
+- name: environment
+  displayName: Deployer Environment
+  type: string
+  default: MGMT
+
+- name: region
+  displayName: SAP Binary Storage Account Location
+  type: string
+  default: germanywestcentral
+
+- name: download
+  displayName: Download from SAP
+  type: boolean
+  default: true
+
+- name: upload
+  displayName: Upload to Storage Account
+  type: boolean
+  default: true
+
+- name: repository
+  displayName: Link to the Repository
+  type: string
+  default: https://github.com/mimergel/sap-hana.git
+
+- name: branch
+  displayName: Branch
+  type: string
+  default: sap-level-up
+
+trigger:
+  none
+
+# This pipeline must run on a self hosted devops agent running as the download from SAP is around 80GB and a large temp drive is required (e.g. on D4ds_v4)
+pool:
+  name: Germany
+
+variables:
+  bom: ${{ parameters.bom_base_name }}
+  env: ${{ parameters.environment }}
+  loc: ${{ parameters.region }}
+  sapbits_sa: ${{ parameters.sapbits_storage_account }}
+  rep: ${{ parameters.repository }}
+  bra: ${{ parameters.branch }}
+
+name: $(bom)_$(env)_$(loc)_$(sapbits_sa)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+
+stages:
+- stage: Prepare_Download_Configuration
+  jobs:
+  - job: Prepare_Download_Configuration
+    steps:
+    - script: |
+        #!/bin/bash
+        green="\e[1;32m"
+        reset="\e[0m"
+        echo -e "$green--- Clone the $(bra) branch of repository $(rep) ---$reset"
+          git clone --quiet --single-branch --branch $(bra) $(rep)
+        echo -e "$green--- Update .sap_deployment_automation/config as DEPLOYMENT_REPO_PATH can change on devops agent ---$reset"
+          export DEPLOYMENT_REPO_PATH=$(Build.Repository.LocalPath)/sap-hana
+          mkdir -p .sap_deployment_automation
+          echo DEPLOYMENT_REPO_PATH=$DEPLOYMENT_REPO_PATH > .sap_deployment_automation/config
+          export HOME=$(Build.Repository.LocalPath)
+          az login --service-principal --username $(ARM_CLIENT_ID) --password $(ARM_CLIENT_SECRET) --tenant $(ARM_TENANT_ID)
+          az account set --subscription $(ARM_SUBSCRIPTION_ID)
+        echo -e "$green--- Convert config files to UX format ---$reset"
+          sudo apt-get -qq install dos2unix
+          dos2unix -q BOMS/sap-parameters.yaml
+          sed -i 's|bom_base_name:.*|bom_base_name:   '"$(bom)"'|' BOMS/sap-parameters.yaml
+          sed -i 's|sapbits_location_base_path:.*|sapbits_location_base_path:    https://'"$(sapbits_sa)"'.blob.core.windows.net/sapbits|' BOMS/sap-parameters.yaml
+          kv_name=$(cat .sap_deployment_automation/$(env)$(loc) | grep keyvault |awk -F'=' '{print $2}')
+          sed -i 's|kv_name:.*|kv_name:    '"$kv_name"'|' BOMS/sap-parameters.yaml
+        echo -e "$green--- Content of BOMS/sap-parameters.yaml ---$reset"
+          cat BOMS/sap-parameters.yaml
+        echo -e "$green--- Set S-Username and S-Password in the key_vault if not yet there ---$reset"
+          export SUsername=$(az keyvault secret list --vault-name $kv_name --query [].name -o tsv | grep S-Username | xargs)
+          if [ -z "$SUsername" ]; then 
+            az keyvault secret set --name S-Username --vault-name $kv_name --value $(SUsername)
+          fi
+          export SPassword=$(az keyvault secret list --vault-name $kv_name --query [].name -o tsv | grep S-Password | xargs)
+          if [ -z "$SPassword" ]; then 
+            az keyvault secret set --name S-Password --vault-name $kv_name --value $(S-Password)
+          fi
+      displayName: Prepare_Download_Configuration
+      env:
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      failOnStderr: true
+
+- stage: Download
+  condition: eq(${{ parameters.download }}, true)
+  jobs:
+  - job: Download
+    timeoutInMinutes: 0
+    steps:
+    - checkout: none
+    - task: Ansible@0
+      displayName: Download
+      timeoutInMinutes: 0
+      inputs:
+        ansibleInterface: 'agentMachine'
+        playbookPathOnAgentMachine: 'sap-hana/deploy/ansible/playbook_bom_downloader.yaml'
+        args: ' -e "@BOMS/sap-parameters.yaml" -e "_workspace_directory=./BOMS/" -e "bom_processing=true" '
+        failOnStderr: false
+
+- stage: Upload
+  condition: eq(${{ parameters.upload }}, true)
+  jobs:
+  - job: Upload
+    timeoutInMinutes: 0
+    steps:
+    - checkout: none
+    - task: Ansible@0
+      displayName: Upload
+      timeoutInMinutes: 0
+      inputs:
+        ansibleInterface: 'agentMachine'
+        playbookPathOnAgentMachine: 'sap-hana/deploy/ansible/playbook_bom_uploader.yaml'
+        args: ' -e "@BOMS/sap-parameters.yaml" -e "_workspace_directory=./BOMS/" -e "bom_processing=true" '
+        failOnStderr: false
