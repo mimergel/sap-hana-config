@@ -25,7 +25,7 @@ Note down all details, especially the Secret in a password store
     ANSIBLE_REMOTE_USER=azureadm
     ANSIBLE_PYTHON_INTERPRETER=auto_silent
     ANSIBLE_CALLBACK_WHITELIST=profile_tasks
-    Repository
+    Repository          
     Branch
     S-Username          S0012345678
     S-Password          xxxxxxxxxxx (mark as password for masking)
