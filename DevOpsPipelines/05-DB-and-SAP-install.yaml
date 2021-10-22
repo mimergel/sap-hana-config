@@ -137,7 +137,7 @@ stages:
           export ENV=$(echo $(sapsystemfolder) | awk -F'-' '{print $1}' | xargs) ; echo Environment $ENV
           export LOCA=$(echo $(sapsystemfolder) | awk -F'-' '{print $2}' | xargs) ; echo Environment $LOCA
           export location=$(cat SYSTEM/$(sapsystemfolder)/$(sapsystemconfig) | grep location'=' | awk -F'=' '{print $2}' | xargs) ; echo Location $location
-          export kv_name=$(cat .sap_deployment_automation/$ENV$location      | grep sapkeyvault | awk -F'=' '{print $2}' | xargs) ; echo SAP_Keyvault $kv_name
+          export kv_name=$(cat .sap_deployment_automation/$ENV$location      | grep workloadkeyvault | awk -F'=' '{print $2}' | xargs) ; echo SAP_Keyvault $kv_name
           az keyvault secret show --name ${ENV}-${LOCA}-SAP-sid-sshkey --vault-name $kv_name --query value -o tsv > sshkey
           cat sshkey
           chmod 600 sshkey
