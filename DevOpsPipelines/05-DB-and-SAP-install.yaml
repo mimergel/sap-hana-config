@@ -158,6 +158,8 @@ stages:
 
 - stage: Base_OS_Config
   condition: eq(${{ parameters.baseosconfig }}, true)
+  dependsOn:
+    - Prepare_DB_SAP_Installation
   jobs:
   - job: Base_OS_Config
     steps:
@@ -170,10 +172,13 @@ stages:
         inventoriesAgentMachine: 'file'
         inventoryFileOnAgentMachine: 'sap_hosts.yaml'
         args: '--private-key sshkey -e "@SYSTEM/$(sapsystemfolder)/sap-parameters.yaml" -e "_workspace_directory=$(Build.Repository.LocalPath)/SYSTEM/$(sapsystemfolder)/"'
-        failOnStderr: true
+        failOnStderr: false
 
 - stage: SAP_OS_Config
   condition: eq(${{ parameters.saposconfig }}, true)
+  dependsOn:
+    - Prepare_DB_SAP_Installation
+    - Base_OS_Config
   jobs:
   - job: SAP_OS_Config
     steps:
@@ -186,10 +191,14 @@ stages:
         inventoriesAgentMachine: 'file'
         inventoryFileOnAgentMachine: 'sap_hosts.yaml'
         args: '--private-key sshkey -e "@SYSTEM/$(sapsystemfolder)/sap-parameters.yaml" -e "_workspace_directory=$(Build.Repository.LocalPath)/SYSTEM/$(sapsystemfolder)/"'
-        failOnStderr: true
+        failOnStderr: false
 
 - stage: BOM_Processing
   condition: eq(${{ parameters.bomprocessing }}, true)
+  dependsOn:
+  - Prepare_DB_SAP_Installation
+  - Base_OS_Config
+  - SAP_OS_Config
   jobs:
   - job: BOM_Processing
     steps:
@@ -202,11 +211,15 @@ stages:
         inventoriesAgentMachine: 'file'
         inventoryFileOnAgentMachine: 'sap_hosts.yaml'
         args: '--private-key sshkey -e "@SYSTEM/$(sapsystemfolder)/sap-parameters.yaml" -e "_workspace_directory=$(Build.Repository.LocalPath)/SYSTEM/$(sapsystemfolder)/"'
-        failOnStderr: true
+        failOnStderr: false
 
 
 - stage: HANA_DB_Install
   condition: eq(${{ parameters.hanadbinstall }}, true)
+  dependsOn:
+  - Prepare_DB_SAP_Installation
+  - SAP_OS_Config
+  - BOM_Processing
   jobs:
   - job: HANA_DB_Install
     steps:
@@ -219,10 +232,15 @@ stages:
         inventoriesAgentMachine: 'file'
         inventoryFileOnAgentMachine: 'sap_hosts.yaml'
         args: '--private-key sshkey -e "@SYSTEM/$(sapsystemfolder)/sap-parameters.yaml" -e "_workspace_directory=$(Build.Repository.LocalPath)/SYSTEM/$(sapsystemfolder)/"'
-        failOnStderr: true
+        failOnStderr: false
 
 - stage: SCS_Install
   condition: eq(${{ parameters.scsinstall }}, true)
+  dependsOn:
+  - Prepare_DB_SAP_Installation
+  - SAP_OS_Config
+  - BOM_Processing
+  - HANA_DB_Install
   jobs:
   - job: SCS_Install
     steps:
@@ -235,10 +253,16 @@ stages:
         inventoriesAgentMachine: 'file'
         inventoryFileOnAgentMachine: 'sap_hosts.yaml'
         args: '--private-key sshkey -e "@SYSTEM/$(sapsystemfolder)/sap-parameters.yaml" -e "_workspace_directory=$(Build.Repository.LocalPath)/SYSTEM/$(sapsystemfolder)/"'
-        failOnStderr: true
+        failOnStderr: false
 
 - stage: DB_Load
   condition: eq(${{ parameters.dbload }}, true)
+  dependsOn:
+  - Prepare_DB_SAP_Installation
+  - SAP_OS_Config
+  - BOM_Processing
+  - HANA_DB_Install
+  - SCS_Install
   jobs:
   - job: DB_Load
     steps:
@@ -251,10 +275,17 @@ stages:
         inventoriesAgentMachine: 'file'
         inventoryFileOnAgentMachine: 'sap_hosts.yaml'
         args: '--private-key sshkey -e "@SYSTEM/$(sapsystemfolder)/sap-parameters.yaml" -e "_workspace_directory=$(Build.Repository.LocalPath)/SYSTEM/$(sapsystemfolder)/"'
-        failOnStderr: true
+        failOnStderr: false
 
 - stage: PAS_Install
   condition: eq(${{ parameters.pasinstall }}, true)
+  dependsOn:
+  - Prepare_DB_SAP_Installation
+  - SAP_OS_Config
+  - BOM_Processing
+  - HANA_DB_Install
+  - SCS_Install
+  - DB_Load
   jobs:
   - job: PAS_Install
     steps:
@@ -267,10 +298,18 @@ stages:
         inventoriesAgentMachine: 'file'
         inventoryFileOnAgentMachine: 'sap_hosts.yaml'
         args: '--private-key sshkey -e "@SYSTEM/$(sapsystemfolder)/sap-parameters.yaml" -e "_workspace_directory=$(Build.Repository.LocalPath)/SYSTEM/$(sapsystemfolder)/"'
-        failOnStderr: true
+        failOnStderr: false
 
 - stage: APP_Install
   condition: eq(${{ parameters.appinstall }}, true)
+  dependsOn:
+  - Prepare_DB_SAP_Installation
+  - SAP_OS_Config
+  - BOM_Processing
+  - HANA_DB_Install
+  - SCS_Install
+  - DB_Load
+  - PAS_Install
   jobs:
   - job: APP_Install
     steps:
@@ -283,10 +322,19 @@ stages:
         inventoriesAgentMachine: 'file'
         inventoryFileOnAgentMachine: 'sap_hosts.yaml'
         args: '--private-key sshkey -e "@SYSTEM/$(sapsystemfolder)/sap-parameters.yaml" -e "_workspace_directory=$(Build.Repository.LocalPath)/SYSTEM/$(sapsystemfolder)/"'
-        failOnStderr: true
+        failOnStderr: false
 
 - stage: WebDisp_Install
   condition: eq(${{ parameters.webdispinstall }}, true)
+  dependsOn:
+  - Prepare_DB_SAP_Installation
+  - SAP_OS_Config
+  - BOM_Processing
+  - HANA_DB_Install
+  - SCS_Install
+  - DB_Load
+  - PAS_Install
+  - APP_Install
   jobs:
   - job: WebDisp_Install
     steps:
