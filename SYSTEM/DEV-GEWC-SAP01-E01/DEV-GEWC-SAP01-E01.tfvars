@@ -61,7 +61,7 @@ location="germanywestcentral"
 
 # The network logical name is mandatory - it is used in the naming convention and should map to the workload virtual network logical name 
 network_name="SAP01"
-network_logical_name = "SAP"
+network_logical_name = "SAP01"
 # ADMIN subnet
 # If defined these parameters control the subnet name and the subnet prefix
 # admin_subnet_name is an optional parameter and should only be used if the default naming is not acceptable 
@@ -163,37 +163,18 @@ database_vm_use_DHCP=true
 
 # Sample Images for different database backends
 
-# Oracle
-#database_vm_image={
-#  source_image_id=""
-#  publisher="Oracle"
-#  offer= "Oracle-Linux",
-#  sku= "81-gen2",
-#  version="latest"
-#}
-
 #SUSE 12 SP5
 database_vm_image={
   os_type=""
   source_image_id=""
   publisher="SUSE"
-  offer="sles-sap-12-sp5"
-  sku="gen1"
+  offer="sles-sap-15-sp2"
+  sku="gen2"
   version="latest"
 }
 
-#RedHat
-# database_vm_image={
-#   os_type="linux"
-#   source_image_id=""
-#   publisher="RedHat"
-#   offer="RHEL-SAP-HA"
-#   sku="82sapha-gen2"
-#   version="8.2.2021040902"
-# }
-
 # database_vm_zones is an optional list defining the availability zones to deploy the database servers
-#database_vm_zones=["1"]
+database_vm_zones=["1"]
 
 # database_nodes provides a way to specify more than one database node, i.e. a scaleout scenario
 
@@ -219,7 +200,7 @@ database_vm_image={
 #database_vm_avset_arm_ids=[/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/DEV-NOEU-SAP01-X00/providers/Microsoft.Compute/availabilitySets/DEV-NOEU-X00_db_avset"
 
 # Optional, Defines the that the database virtual machines will not be placed in a proximity placement group
-#database_no_ppg=false
+database_no_ppg=true
 
 # Optional, Defines the that the database virtual machines will not be placed in an availability set
 #database_no_avset=false
@@ -254,16 +235,16 @@ app_tier_use_DHCP=true
 # Application Servers
 
 # application_server_count defines how many application servers to deploy
-application_server_count=2
+application_server_count=1
 
 # application_server_zones is an optional list defining the availability zones to which deploy the application servers
-#application_server_zones=["1","2","3"]
+application_server_zones=["1"]
 
 # application_server_sku, if defined provides the SKU to use for the application servers
 #application_server_sku="Standard_D4s_v3"
 
 # application_server_no_ppg defines the that the application server virtual machines will not be placed in a proximity placement group
-#application_server_no_ppg=false
+application_server_no_ppg=true
 
 # application_server_no_avset defines the that the application server virtual machines will not be placed in an availability set
 #application_server_no_avset=false
@@ -286,8 +267,8 @@ application_server_image= {
   os_type=""
   source_image_id=""
   publisher="SUSE"
-  offer="sles-sap-12-sp5"
-  sku="gen1"
+  offer="sles-sap-15-sp2"
+  sku="gen2"
   version="latest"
 }
 
@@ -300,7 +281,7 @@ scs_server_count=1
 #scs_server_sku="Standard_D4s_v3"
 
 # scs_server_no_ppg defines the that the SCS virtual machines will not be placed in a proximity placement group
-#scs_server_no_ppg=false
+scs_server_no_ppg=true
 
 # scs_server_no_avset defines the that the SCS virtual machines will not be placed in an availability set
 #scs_server_no_avset=false
@@ -331,7 +312,7 @@ ers_instance_number="02"
 #scs_server_tags={},
 
 # scs_server_zones is an optional list defining the availability zones to which deploy the SCS servers
-#scs_server_zones=["1","2","3"]
+scs_server_zones=["1"]
 
 # The vm_image defines the Virtual machine image to use for the application servers, 
 # if source_image_id is specified the deployment will use the custom image provided, 
@@ -365,7 +346,7 @@ webdispatcher_server_count=0
 #webdispatcher_server_sku="Standard_D4s_v3"
 
 # webdispatcher_server_no_ppg defines the that the Web dispatcher virtual machines will not be placed in a proximity placement group
-#webdispatcher_server_no_ppg=false
+webdispatcher_server_no_ppg=true
 
 #webdispatcher_server_no_avset defines the that the Web dispatcher virtual machines will not be placed in an availability set
 #webdispatcher_server_no_avset=false
@@ -374,7 +355,7 @@ webdispatcher_server_count=0
 #webdispatcher_server_tags={},
 
 # webdispatcher_server_zones is an optional list defining the availability zones to which deploy the web dispatchers
-#webdispatcher_server_zones=["1","2","3"]
+webdispatcher_server_zones=["1"]
 
 # The vm_image defines the Virtual machine image to use for the web dispatchers, 
 # if source_image_id is specified the deployment will use the custom image provided, 

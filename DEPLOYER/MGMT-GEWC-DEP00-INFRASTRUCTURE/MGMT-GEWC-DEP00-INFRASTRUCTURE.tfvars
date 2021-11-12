@@ -118,7 +118,7 @@ This block describes the variables for the authentication section block in the j
 /*
 This block describes the variables for the options section block in the json file
 */
-deployer_enable_public_ip=true
+deployer_enable_public_ip=false
 # firewall_deployment is a boolean flag controlling if an Azure firewall is to be deployed in the deployer VNet
 firewall_deployment=false
 enable_purge_control_for_keyvaults=false
