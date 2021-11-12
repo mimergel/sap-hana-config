@@ -10,20 +10,15 @@ parameters:
   type: string
   default: S41909SPS03_v0005ms
 
-- name: sapbits_storage_account
-  displayName: SAP Binary Storage Account
-  type: string
-  default: mgmtgewcsaplib1a6
-
 - name: environment
   displayName: Deployer Environment
   type: string
-  default: MGMT
+  default: PERM
 
 - name: region
   displayName: SAP Binary Storage Account Location
   type: string
-  default: germanywestcentral
+  default: northeurope
 
 - name: download
   displayName: Download from SAP
@@ -35,32 +30,19 @@ parameters:
   type: boolean
   default: true
 
-- name: repository
-  displayName: Link to the Repository
-  type: string
-  default: https://github.com/mimergel/sap-hana.git
-
-- name: branch
-  displayName: Branch
-  type: string
-  default: sap-level-up
-
 trigger:
   none
 
 # This pipeline must run on a self hosted devops agent running as the download from SAP is around 80GB and a large temp drive is required (e.g. on D4ds_v4)
 pool:
-  name: Germany
+  name: PERM-NOEU
 
 variables:
   bom: ${{ parameters.bom_base_name }}
   env: ${{ parameters.environment }}
   loc: ${{ parameters.region }}
-  sapbits_sa: ${{ parameters.sapbits_storage_account }}
-  rep: ${{ parameters.repository }}
-  bra: ${{ parameters.branch }}
 
-name: $(bom)_$(env)_$(loc)_$(sapbits_sa)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+name: $(bom)_$(env)_$(loc)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
 
 stages:
 - stage: Prepare_Download_Configuration
@@ -71,8 +53,8 @@ stages:
         #!/bin/bash
         green="\e[1;32m"
         reset="\e[0m"
-        echo -e "$green--- Clone the $(bra) branch of repository $(rep) ---$reset"
-          git clone --quiet --single-branch --branch $(bra) $(rep)
+        echo -e "$green--- Clone the $(Branch) branch of repository $(Repository) ---$reset"
+          git clone --quiet --single-branch --branch $(Branch) $(Repository)
         echo -e "$green--- Update .sap_deployment_automation/config as DEPLOYMENT_REPO_PATH can change on devops agent ---$reset"
           export DEPLOYMENT_REPO_PATH=$(Build.Repository.LocalPath)/sap-hana
           mkdir -p .sap_deployment_automation
@@ -83,16 +65,18 @@ stages:
         echo -e "$green--- Convert config files to UX format ---$reset"
           sudo apt-get -qq install dos2unix
           dos2unix -q BOMS/sap-parameters.yaml
-          sed -i 's|bom_base_name:.*|bom_base_name:   '"$(bom)"'|' BOMS/sap-parameters.yaml
-          sed -i 's|sapbits_location_base_path:.*|sapbits_location_base_path:    https://'"$(sapbits_sa)"'.blob.core.windows.net/sapbits|' BOMS/sap-parameters.yaml
           kv_name=$(cat .sap_deployment_automation/$(env)$(loc) | grep keyvault |awk -F'=' '{print $2}')
+          sapbits_sa_url=$(az keyvault secret show --vault-name $kv_name --name sapbits-location-base-path --query value |xargs)
+          sed -i 's|bom_base_name:.*|bom_base_name:   '"$(bom)"'|' BOMS/sap-parameters.yaml
+          sed -i 's|sapbits_location_base_path:.*|sapbits_location_base_path:    '"$sapbits_sa_url"'|' BOMS/sap-parameters.yaml
           sed -i 's|kv_name:.*|kv_name:    '"$kv_name"'|' BOMS/sap-parameters.yaml
         echo -e "$green--- Content of BOMS/sap-parameters.yaml ---$reset"
           cat BOMS/sap-parameters.yaml
         echo -e "$green--- Set S-Username and S-Password in the key_vault if not yet there ---$reset"
           export SUsername=$(az keyvault secret list --vault-name $kv_name --query [].name -o tsv | grep S-Username | xargs)
+          echo $SUsername
           if [ -z "$SUsername" ]; then 
-            az keyvault secret set --name S-Username --vault-name $kv_name --value $(SUsername)
+            az keyvault secret set --name S-Username --vault-name $kv_name --value $(S-Username)
           fi
           export SPassword=$(az keyvault secret list --vault-name $kv_name --query [].name -o tsv | grep S-Password | xargs)
           if [ -z "$SPassword" ]; then 
@@ -116,7 +100,7 @@ stages:
       inputs:
         ansibleInterface: 'agentMachine'
         playbookPathOnAgentMachine: 'sap-hana/deploy/ansible/playbook_bom_downloader.yaml'
-        args: ' -e "@BOMS/sap-parameters.yaml" -e "_workspace_directory=./BOMS/" -e "bom_processing=true" '
+        args: ' -e "HOME=$(Build.Repository.LocalPath)" -e "@BOMS/sap-parameters.yaml" -e "_workspace_directory=./BOMS/" -e "bom_processing=true" '
         failOnStderr: false
 
 - stage: Upload
@@ -132,5 +116,5 @@ stages:
       inputs:
         ansibleInterface: 'agentMachine'
         playbookPathOnAgentMachine: 'sap-hana/deploy/ansible/playbook_bom_uploader.yaml'
-        args: ' -e "@BOMS/sap-parameters.yaml" -e "_workspace_directory=./BOMS/" -e "bom_processing=true" '
+        args: ' -e "HOME=$(Build.Repository.LocalPath)" -e "@BOMS/sap-parameters.yaml" -e "_workspace_directory=./BOMS/" -e "bom_processing=true" '
         failOnStderr: false

@@ -8,7 +8,7 @@ parameters:
 - name: sap_system
   displayName: ENV-LOCA-VNET-SID
   type: string
-  default: DEV-GEWC-SAP01-E01
+  default: DEV-NOEU-SAP02-S12
 
 - name: cleanup
   displayName: Remove the relevant Resource Groups instead of deploying
@@ -19,7 +19,6 @@ trigger:
   none
 
 pool:
-#  name: Germany
   vmImage: ubuntu-latest
 
 variables:
@@ -65,7 +64,7 @@ stages:
         echo -e "$green--- Prepare the exchange of information from devops agent back to the repository ---$reset"
           organization=$(echo $(System.CollectionUri) | cut -d'/' -f4)
           git config  http.https://$organization@dev.azure.com/$organization/$(System.TeamProject)/_git/$(Build.Repository.Name).extraheader "AUTHORIZATION: bearer $SYSTEM_ACCESSTOKEN"
-        echo -e "$green--- Run the prepare region script that deploys the subscription hub with the Deployer VM and SAP Library ---$reset"
+        echo -e "$green--- Run the installer script that deploys the SAP System ---$reset"
           cd SYSTEM/$(sapsystemfolder)
           ${DEPLOYMENT_REPO_PATH}/deploy/scripts/installer.sh --parameterfile $(sapsystemconfig) --type sap_system --ado --auto-approve
           cd $HOME
@@ -77,7 +76,7 @@ stages:
           git add SYSTEM/$(sapsystemfolder)/sap-parameters.yaml            &>> /tmp/$(log)2
           git add SYSTEM/$(sapsystemfolder)/${SID}_hosts.yaml              &>> /tmp/$(log)2
           git commit -m "Added updates from devops deployment $(Build.DefinitionName) [skip ci]" &>> /tmp/$(log)2
-          git push origin HEAD:main             &>> /tmp/$(log)2
+          git push -f origin HEAD:main             &>> /tmp/$(log)2
         echo "output the log ---$reset"
           cat /tmp/$(log)2
         git config --unset-all http.https://$organization@dev.azure.com/$organization/$(System.TeamProject)/_git/$(Build.Repository.Name).extraheader

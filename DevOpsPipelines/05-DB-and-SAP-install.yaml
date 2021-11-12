@@ -8,7 +8,7 @@ parameters:
 - name: sap_system
   displayName: ENV-LOCA-VNET-SID
   type: string
-  default: DEV-GEWC-SAP01-E01
+  default: DEV-NOEU-SAP02-S12
 
 - name: bom_base_name
   displayName: BOM Base Name
@@ -18,7 +18,7 @@ parameters:
 - name: sap_fqdn
   displayName: SAP Domain Name
   type: string
-  default: sap.contoso.net
+  default: sap.artemis.net
 
 - name: baseosconfig
   displayName: Base OS Config
@@ -89,7 +89,7 @@ trigger:
   none
 
 pool:
-  name: Germany
+  name: PERM-NOEU
 
 variables:
   sapsystemfolder: ${{ parameters.sap_system }}
@@ -134,12 +134,12 @@ stages:
           az login --service-principal --username $(ARM_CLIENT_ID) --password $(ARM_CLIENT_SECRET) --tenant $(ARM_TENANT_ID)
           az account set --subscription $(ARM_SUBSCRIPTION_ID)
         echo -e "$green--- Get sshkey to connect to SAP VMs ---$reset"
-          export ENV=$(echo $(sapsystemfolder) | awk -F'-' '{print $1}' | xargs) ; echo Environment $ENV
-          export LOCA=$(echo $(sapsystemfolder) | awk -F'-' '{print $2}' | xargs) ; echo Environment $LOCA
-          export location=$(cat SYSTEM/$(sapsystemfolder)/$(sapsystemconfig) | grep location'=' | awk -F'=' '{print $2}' | xargs) ; echo Location $location
-          export kv_name=$(cat .sap_deployment_automation/$ENV$location      | grep workloadkeyvault | awk -F'=' '{print $2}' | xargs) ; echo SAP_Keyvault $kv_name
-          az keyvault secret show --name ${ENV}-${LOCA}-SAP-sid-sshkey --vault-name $kv_name --query value -o tsv > sshkey
-          cat sshkey
+          export ENV=$(echo $(sapsystemfolder)  | awk -F'-' '{print $1}' | xargs) ; echo Environment $ENV
+          export LOCA=$(echo $(sapsystemfolder) | awk -F'-' '{print $2}' | xargs) ; echo Location    $LOCA
+          export VNET=$(echo $(sapsystemfolder) | awk -F'-' '{print $3}' | xargs) ; echo VNET        $VNET
+          export region=$(cat SYSTEM/$(sapsystemfolder)/$(sapsystemconfig) | grep location'=' | awk -F'=' '{print $2}' | xargs) ; echo Region $region
+          export kv_name=$(cat .sap_deployment_automation/$ENV$region      | grep workloadkeyvault | awk -F'=' '{print $2}' | xargs) ; echo SAP_Keyvault $kv_name
+          az keyvault secret show --name ${ENV}-${LOCA}-${VNET}-sid-sshkey --vault-name $kv_name --query value -o tsv > sshkey
           chmod 600 sshkey
         echo -e "$green--- Add & update files in the DevOps Repository ---$reset"
           git config --global user.email "$(Build.RequestedForEmail)"
@@ -147,7 +147,7 @@ stages:
           git add .sap_deployment_automation                      &>> /tmp/$(log)
           git add SYSTEM/$(sapsystemfolder)/sap-parameters.yaml   &>> /tmp/$(log)
           git commit -m "Added updates from devops deployment $(Build.DefinitionName) [skip ci]" &>> /tmp/$(log)
-          git push origin HEAD:main                               &>> /tmp/$(log)
+          git push -f origin HEAD:main                            &>> /tmp/$(log)
         echo "output the log ---$reset"
           cat /tmp/$(log)
         git config --unset-all http.https://$organization@dev.azure.com/$organization/$(System.TeamProject)/_git/$(Build.Repository.Name).extraheader
